@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import dbConnect from '@/lib/mongodb';
+import { AppConfig } from '@/models/AppConfig';
 
-const LIVEAVATAR_API_KEY = process.env.LIVEAVATAR_API_KEY;
 const LIVEAVATAR_API_URL = 'https://api.liveavatar.com/v1';
+
+/**
+ * Fetch LiveAvatar API key from database, fallback to env variable
+ */
+async function getLiveAvatarApiKey(): Promise<string> {
+  try {
+    await dbConnect();
+    const config = await AppConfig.findOne({ key: 'LIVEAVATAR_API_KEY' });
+    
+    if (config?.value) {
+      console.log('Using LiveAvatar API key from database');
+      return config.value;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch API key from database, using env fallback:', error);
+  }
+  
+  // Fallback to environment variable
+  console.log('Using LiveAvatar API key from environment');
+  return process.env.LIVEAVATAR_API_KEY || '';
+}
 
 // Get current date and calculate days to Christmas
 const getCurrentDateContext = () => {
@@ -77,6 +99,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'User ID is required' },
         { status: 400 }
+      );
+    }
+
+    // Get API key from database (with env fallback)
+    const LIVEAVATAR_API_KEY = await getLiveAvatarApiKey();
+
+    if (!LIVEAVATAR_API_KEY) {
+      return NextResponse.json(
+        { error: 'LiveAvatar API key not configured' },
+        { status: 500 }
       );
     }
 
@@ -182,9 +214,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get API key from database (with env fallback)
+    const LIVEAVATAR_API_KEY = await getLiveAvatarApiKey();
+
     // Return session token (this would typically come from your session management)
     return NextResponse.json(
-      { token: process.env.LIVEAVATAR_API_KEY },
+      { token: LIVEAVATAR_API_KEY },
       { status: 200 }
     );
   } catch (error: any) {
