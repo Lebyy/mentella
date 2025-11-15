@@ -1,9 +1,48 @@
+'use client';
+
 import Link from 'next/link';
-import { Button, Card, CardBody } from '@heroui/react';
+import { Button, Card, CardBody } from '@nextui-org/react';
+import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const { isSignedIn, isLoaded } = useUser();
+  const router = useRouter();
+
+  if (isSignedIn) {
+    router.push('/dashboard');
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+      {/* Navigation */}
+      <nav className="container mx-auto px-4 py-6 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+          Mentella
+        </h1>
+        <div className="flex gap-3 items-center">
+          {isLoaded && (
+            isSignedIn ? (
+              <UserButton afterSignOutUrl="/" />
+            ) : (
+              <>
+                <SignInButton mode="modal">
+                  <Button variant="bordered" color="primary">
+                    Sign In
+                  </Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button color="primary" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                    Get Started
+                  </Button>
+                </SignUpButton>
+              </>
+            )
+          )}
+        </div>
+      </nav>
+
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center max-w-4xl mx-auto">
@@ -20,25 +59,51 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex gap-4 justify-center mb-16">
-            <Button
-              as={Link}
-              href="/assessment"
-              color="primary"
-              size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold"
-            >
-              Start Pre-Assessment
-            </Button>
-            <Button
-              as={Link}
-              href="/therapy"
-              variant="bordered"
-              color="secondary"
-              size="lg"
-              className="font-semibold"
-            >
-              Begin Therapy Session
-            </Button>
+            {isSignedIn ? (
+              <>
+                <Button
+                  as={Link}
+                  href="/dashboard"
+                  color="primary"
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold"
+                >
+                  Go to Dashboard
+                </Button>
+                <Button
+                  as={Link}
+                  href="/therapy"
+                  variant="bordered"
+                  color="secondary"
+                  size="lg"
+                  className="font-semibold"
+                >
+                  Start Therapy Session
+                </Button>
+              </>
+            ) : (
+              <>
+                <SignUpButton mode="modal">
+                  <Button
+                    color="primary"
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold"
+                  >
+                    Get Started Free
+                  </Button>
+                </SignUpButton>
+                <SignInButton mode="modal">
+                  <Button
+                    variant="bordered"
+                    color="secondary"
+                    size="lg"
+                    className="font-semibold"
+                  >
+                    Sign In
+                  </Button>
+                </SignInButton>
+              </>
+            )}
           </div>
 
           {/* Features Grid */}
