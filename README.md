@@ -99,10 +99,10 @@ mentella/
 - `GET /api/assessments?userId=` - Get user assessments
 
 ### Therapy Sessions
-- `POST /api/therapy/sessions` - Start new session
-- `GET /api/therapy/sessions?userId=` - Get user sessions
-- `POST /api/therapy/sessions/[id]/messages` - Send message
-- `POST /api/therapy/sessions/[id]/end` - End session
+- `POST /api/sessions` - Start new session
+- `GET /api/sessions?userId=` - Get user sessions
+- `POST /api/sessions/[id]/messages` - Send message
+- `POST /api/sessions/[id]/end` - End session
 
 ### Persona
 - `POST /api/persona` - Generate user persona

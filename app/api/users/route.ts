@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     await dbConnect();
 
     const body = await request.json();
-    const { name, email, phone, dateOfBirth } = body;
+    const { clerkId, name, email, phone, dateOfBirth } = body;
 
     // Validate required fields
     if (!name || !email) {
@@ -17,8 +17,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    // Check if user already exists by clerkId or email
+    const existingUser = await User.findOne({ 
+      $or: [
+        { clerkId },
+        { email: email.toLowerCase() }
+      ]
+    });
+    
     if (existingUser) {
       return NextResponse.json(
         { message: 'User already exists', user: existingUser },
@@ -28,6 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Create new user
     const user = await User.create({
+      clerkId,
       name,
       email: email.toLowerCase(),
       phone,
@@ -54,6 +61,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
     const userId = searchParams.get('userId');
+    const clerkId = searchParams.get('clerkId');
+
+    if (clerkId) {
+      const user = await User.findOne({ clerkId });
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      return NextResponse.json({ user }, { status: 200 });
+    }
 
     if (email) {
       const user = await User.findOne({ email: email.toLowerCase() });
@@ -72,7 +88,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Email or userId parameter required' },
+      { error: 'Email, userId, or clerkId parameter required' },
       { status: 400 }
     );
   } catch (error: any) {

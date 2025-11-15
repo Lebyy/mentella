@@ -18,7 +18,7 @@ class GeminiService {
   private model;
 
   constructor() {
-    this.model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    this.model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   }
 
   /**
@@ -38,14 +38,39 @@ THERAPY SESSIONS DATA:
 ${therapySessions.map((s, i) => `Session ${i + 1}:\nMood: ${s.mood || 'Not specified'}\nKey conversations: ${s.transcript.slice(0, 3).map(m => m.message).join('. ')}`).join('\n\n')}
 ` : ''}
 
-Generate a detailed persona paragraph (200-300 words) that includes:
-1. Medical background and current health status
-2. Mental health state and emotional patterns
-3. Lifestyle factors and habits
-4. Key concerns and needs
-5. Recommended approach for future therapy sessions
+Generate a detailed persona in RICH HTML FORMAT with the following requirements:
 
-The persona should be professional, empathetic, and actionable for healthcare providers.
+1. Use semantic HTML with beautiful styling
+2. Include relevant emojis throughout (🏥 💊 🧠 ❤️ 💪 🎯 ⚠️ ✅ 🌟 💡 etc.)
+3. Use colored badges/pills for key metrics using Tailwind CSS classes
+4. Structure with clear sections using headers
+5. Make it visually appealing and easy to scan
+6. Include subtle animations (fade-in, slide effects)
+7. Use gradients and modern design patterns
+8. Keep it professional but engaging
+
+REQUIRED SECTIONS (use these emojis and structure):
+- 🏥 Medical Overview (colored status badges)
+- 🧠 Mental Health Status (mood indicators with colors)
+- 💪 Lifestyle & Habits (green/yellow/red indicators)
+- ⚠️ Key Concerns (warning badges)
+- 🎯 Recommended Approach (action items with icons)
+
+Use Tailwind CSS classes for styling (bg-gradient-to-r, rounded-lg, shadow-md, etc.)
+Return ONLY the HTML content, no markdown code blocks.
+
+Example structure:
+<div class="space-y-6 animate-fade-in">
+  <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-md">
+    <h3 class="text-2xl font-bold mb-4">🏥 Medical Overview</h3>
+    <p class="text-gray-700 mb-3">Content here...</p>
+    <div class="flex gap-2 flex-wrap">
+      <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">✅ Healthy</span>
+    </div>
+  </div>
+</div>
+
+Generate comprehensive, professional, and visually stunning HTML persona (aim for 300-400 words of content).
 `;
 
     try {
@@ -162,6 +187,96 @@ Your response:
     } catch (error) {
       console.error('Error generating therapy response:', error);
       return "I'm here to listen and support you. Could you tell me more about what you're experiencing?";
+    }
+  }
+
+  /**
+   * Analyze complete assessment transcript and generate comprehensive data
+   */
+  async analyzeAssessmentTranscript(
+    transcript: Array<{ speaker: string; message: string }>,
+    assessmentType: string
+  ): Promise<{
+    score: number;
+    insights: string;
+    recommendations: string[];
+    detectedConditions: string[];
+    riskLevel: 'low' | 'medium' | 'high';
+  }> {
+    const typePrompts: Record<string, string> = {
+      cardiovascular: 'cardiovascular health, heart function, blood pressure, cholesterol, exercise capacity',
+      neurological: 'neurological function, cognitive abilities, motor skills, sensory perception, mental clarity',
+      respiratory: 'respiratory health, breathing capacity, lung function, oxygen levels, endurance',
+      psychometric: 'mental health, emotional state, stress levels, anxiety, depression, cognitive patterns',
+      'full-health': 'overall health status across all bodily systems',
+      therapy: 'mental and emotional well-being, therapeutic progress',
+    };
+
+    const focusArea = typePrompts[assessmentType] || 'general health';
+
+    const prompt = `
+You are a medical AI assistant analyzing a ${assessmentType} health assessment. Review the complete conversation transcript and provide a comprehensive analysis.
+
+TRANSCRIPT:
+${transcript.map((t, i) => `${i + 1}. ${t.speaker}: ${t.message}`).join('\n')}
+
+Focus Area: ${focusArea}
+
+Provide your analysis in the following JSON format:
+{
+  "score": <number 0-100, where 100 is excellent health>,
+  "insights": "<detailed 200-300 word analysis of findings>",
+  "recommendations": ["<recommendation 1>", "<recommendation 2>", "<recommendation 3>"],
+  "detectedConditions": ["<condition 1>", "<condition 2>"],
+  "riskLevel": "<low|medium|high>"
+}
+
+Base the score on:
+- Symptoms reported
+- Lifestyle factors
+- Risk indicators
+- Overall health patterns
+
+Provide specific, actionable recommendations. List any potential health concerns detected. Return ONLY valid JSON, nothing else.
+`;
+
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().trim();
+      
+      // Extract JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        return {
+          score: parsed.score || 75,
+          insights: parsed.insights || 'Assessment completed successfully.',
+          recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [
+            'Continue monitoring your health',
+            'Maintain healthy lifestyle habits',
+            'Schedule regular checkups',
+          ],
+          detectedConditions: Array.isArray(parsed.detectedConditions) ? parsed.detectedConditions : [],
+          riskLevel: parsed.riskLevel || 'medium',
+        };
+      }
+      
+      throw new Error('Invalid JSON response');
+    } catch (error) {
+      console.error('Error analyzing assessment transcript:', error);
+      // Return safe defaults
+      return {
+        score: 75,
+        insights: 'Assessment completed. Based on the conversation, your overall health appears stable. Continue monitoring your symptoms and maintain healthy habits.',
+        recommendations: [
+          'Schedule a follow-up with your healthcare provider',
+          'Monitor symptoms and track any changes',
+          'Maintain a balanced diet and regular exercise',
+        ],
+        detectedConditions: [],
+        riskLevel: 'medium',
+      };
     }
   }
 }

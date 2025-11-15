@@ -8,7 +8,7 @@ export interface IMessage {
 
 export interface ITherapySession extends Document {
   userId: Types.ObjectId;
-  sessionType: 'initial' | 'followup' | 'crisis' | 'general';
+  sessionType: 'cardiovascular' | 'neurological' | 'full-health' | 'respiratory' | 'psychometric' | 'therapy';
   transcript: IMessage[];
   duration: number; // in seconds
   mood?: string;
@@ -44,8 +44,8 @@ const TherapySessionSchema = new Schema<ITherapySession>(
     },
     sessionType: {
       type: String,
-      enum: ['initial', 'followup', 'crisis', 'general'],
-      default: 'general',
+      enum: ['cardiovascular', 'neurological', 'full-health', 'respiratory', 'psychometric', 'therapy'],
+      default: 'therapy',
     },
     transcript: [MessageSchema],
     duration: {

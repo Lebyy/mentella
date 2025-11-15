@@ -1,19 +1,41 @@
-import mongoose, { Schema, model, models, Document } from 'mongoose';
+import mongoose, { Schema, model, models, Document, Types } from 'mongoose';
+
+export interface IPersonaHistory {
+  persona: string;
+  timestamp: Date;
+}
 
 export interface IUser extends Document {
+  clerkId: string;
   name: string;
   email: string;
   phone?: string;
   dateOfBirth?: Date;
-  persona?: string; // AI-generated user persona
-  assessmentCompleted: boolean;
-  therapySessionsCount: number;
+  currentPersona?: string;
+  personaHistory: IPersonaHistory[];
+  assessments: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
 
+const PersonaHistorySchema = new Schema<IPersonaHistory>({
+  persona: {
+    type: String,
+    required: true,
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 const UserSchema = new Schema<IUser>(
   {
+    clerkId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     name: {
       type: String,
       required: [true, 'Name is required'],
@@ -30,18 +52,15 @@ const UserSchema = new Schema<IUser>(
     dateOfBirth: {
       type: Date,
     },
-    persona: {
+    currentPersona: {
       type: String,
       default: null,
     },
-    assessmentCompleted: {
-      type: Boolean,
-      default: false,
-    },
-    therapySessionsCount: {
-      type: Number,
-      default: 0,
-    },
+    personaHistory: [PersonaHistorySchema],
+    assessments: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Assessment',
+    }],
   },
   {
     timestamps: true,

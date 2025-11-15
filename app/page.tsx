@@ -4,13 +4,23 @@ import Link from 'next/link';
 import { Button, Card, CardBody } from '@nextui-org/react';
 import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
   const { isSignedIn, isLoaded } = useUser();
   const router = useRouter();
 
+  useEffect(() => {
+    if (isSignedIn) {
+      router.push('/dashboard');
+    }
+  }, [isSignedIn, router]);
+
+  if (!isLoaded) {
+    return null;
+  }
+
   if (isSignedIn) {
-    router.push('/dashboard');
     return null;
   }
 

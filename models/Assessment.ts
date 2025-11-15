@@ -1,34 +1,38 @@
 import mongoose, { Schema, model, models, Document, Types } from 'mongoose';
 
-export interface IAssessmentAnswer {
-  question: string;
-  answer: string;
-  category: 'medical' | 'mental' | 'lifestyle' | 'general';
+export interface IMessage {
+  speaker: 'user' | 'avatar';
+  message: string;
+  timestamp: Date;
 }
 
 export interface IAssessment extends Document {
   userId: Types.ObjectId;
-  answers: IAssessmentAnswer[];
+  type: 'cardiovascular' | 'neurological' | 'full-health' | 'respiratory' | 'psychometric' | 'therapy';
+  transcript: IMessage[];
+  duration: number; // in seconds
   score?: number;
+  insights?: string;
   recommendations?: string[];
-  completedAt: Date;
+  startedAt: Date;
+  completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const AssessmentAnswerSchema = new Schema<IAssessmentAnswer>({
-  question: {
+const MessageSchema = new Schema<IMessage>({
+  speaker: {
+    type: String,
+    enum: ['user', 'avatar'],
+    required: true,
+  },
+  message: {
     type: String,
     required: true,
   },
-  answer: {
-    type: String,
-    required: true,
-  },
-  category: {
-    type: String,
-    enum: ['medical', 'mental', 'lifestyle', 'general'],
-    required: true,
+  timestamp: {
+    type: Date,
+    default: Date.now,
   },
 });
 
@@ -39,14 +43,29 @@ const AssessmentSchema = new Schema<IAssessment>(
       ref: 'User',
       required: true,
     },
-    answers: [AssessmentAnswerSchema],
+    type: {
+      type: String,
+      enum: ['cardiovascular', 'neurological', 'full-health', 'respiratory', 'psychometric', 'therapy'],
+      required: true,
+    },
+    transcript: [MessageSchema],
+    duration: {
+      type: Number,
+      default: 0,
+    },
     score: {
       type: Number,
     },
+    insights: {
+      type: String,
+    },
     recommendations: [String],
-    completedAt: {
+    startedAt: {
       type: Date,
       default: Date.now,
+    },
+    completedAt: {
+      type: Date,
     },
   },
   {

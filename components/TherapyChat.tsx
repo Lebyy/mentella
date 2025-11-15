@@ -7,16 +7,24 @@ interface Message {
   speaker: 'user' | 'avatar';
   message: string;
   timestamp: Date;
+  type?: 'voice' | 'text';
 }
 
 interface TherapyChatProps {
   sessionId: string;
   onSendMessage: (message: string) => Promise<string | null>;
   initialMessages?: Message[];
+  onAddMessage?: (message: Message) => void;
 }
 
-export default function TherapyChat({ sessionId, onSendMessage, initialMessages = [] }: TherapyChatProps) {
+export default function TherapyChat({ sessionId, onSendMessage, initialMessages = [], onAddMessage }: TherapyChatProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
+
+  // Expose addMessage function to parent
+  const addMessage = (message: Message) => {
+    setMessages(prev => [...prev, message]);
+    onAddMessage?.(message);
+  };
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -38,7 +46,7 @@ export default function TherapyChat({ sessionId, onSendMessage, initialMessages 
       timestamp: new Date(),
     };
 
-    setMessages([...messages, userMessage]);
+    addMessage(userMessage);
     setInputMessage('');
     setIsLoading(true);
 
@@ -51,7 +59,7 @@ export default function TherapyChat({ sessionId, onSendMessage, initialMessages 
           message: aiResponse,
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, avatarMessage]);
+        addMessage(avatarMessage);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -98,9 +106,14 @@ export default function TherapyChat({ sessionId, onSendMessage, initialMessages 
                   : 'bg-gray-100 text-gray-800'
               }`}
             >
-              <p className="text-sm leading-relaxed">{msg.message}</p>
+              <div className="flex items-start gap-2 mb-1">
+                {msg.type === 'voice' && (
+                  <span className="text-xs">🎤</span>
+                )}
+                <p className="text-sm leading-relaxed flex-1">{msg.message}</p>
+              </div>
               <p
-                className={`text-xs mt-1 ${
+                className={`text-xs ${
                   msg.speaker === 'user' ? 'text-blue-100' : 'text-gray-500'
                 }`}
               >

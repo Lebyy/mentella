@@ -11,6 +11,12 @@ export interface LiveAvatarConfig {
   avatarId?: string;
   voice?: string;
   language?: string;
+  contextId?: string;
+}
+
+export interface ContextConfig {
+  systemPrompt: string;
+  sessionType: string;
 }
 
 export interface StreamingSessionData {
@@ -29,20 +35,49 @@ class LiveAvatarService {
   }
 
   /**
+   * Create a context for the avatar with system prompt
+   */
+  async createContext(config: ContextConfig): Promise<string> {
+    try {
+      const response = await axios.post(
+        `${this.baseUrl}/contexts`,
+        {
+          system_prompt: config.systemPrompt,
+          metadata: {
+            session_type: config.sessionType,
+          },
+        },
+        {
+          headers: {
+            'x-api-key': this.apiKey,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return response.data.context_id || response.data.data?.context_id;
+    } catch (error) {
+      console.error('Error creating context:', error);
+      throw new Error('Failed to create avatar context');
+    }
+  }
+
+  /**
    * Create a new streaming session with LiveAvatar
    */
   async createStreamingSession(config?: LiveAvatarConfig): Promise<StreamingSessionData> {
     try {
       const response = await axios.post(
-        `${this.baseUrl}/streaming/new`,
+        `${this.baseUrl}/sessions/token`,
         {
           avatar_id: config?.avatarId || 'default',
           voice: config?.voice || 'en-US-Standard-A',
           language: config?.language || 'en-US',
+          context_id: config?.contextId,
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'x-api-key': this.apiKey,
             'Content-Type': 'application/json',
           },
         }

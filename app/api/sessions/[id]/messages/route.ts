@@ -6,14 +6,14 @@ import geminiService from '@/lib/services/gemini';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await dbConnect();
 
     const body = await request.json();
     const { message, speaker } = body;
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
 
     if (!message || !speaker) {
       return NextResponse.json(
@@ -28,38 +28,18 @@ export async function POST(
       return NextResponse.json({ error: 'Session not found' }, { status: 404 });
     }
 
-    // Add user message to transcript
+    // Add message to transcript (just store it, avatar handles responses)
     session.transcript.push({
       speaker,
       message,
       timestamp: new Date(),
     });
 
-    // If message is from user, generate AI response
-    let aiResponse = null;
-    if (speaker === 'user') {
-      const user = await User.findById(session.userId);
-      
-      aiResponse = await geminiService.generateTherapyResponse(
-        message,
-        session.transcript.map((t: any) => ({ speaker: t.speaker, message: t.message })),
-        user?.persona || undefined
-      );
-
-      // Add AI response to transcript
-      session.transcript.push({
-        speaker: 'avatar',
-        message: aiResponse,
-        timestamp: new Date(),
-      });
-    }
-
     await session.save();
 
     return NextResponse.json(
       {
         message: 'Message added successfully',
-        aiResponse,
         transcript: session.transcript,
       },
       { status: 200 }
