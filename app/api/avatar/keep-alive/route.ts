@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
+import dbConnect from '@/lib/mongodb';
+import { AppConfig } from '@/models/AppConfig';
 
-const LIVEAVATAR_API_KEY = '6c6fed69-c25f-11f0-a99e-066a7fa2e369';
+async function getLiveAvatarApiKey(): Promise<string> {
+  try {
+    await dbConnect();
+    const config = await AppConfig.findOne({ key: 'LIVEAVATAR_API_KEY' });
+    
+    if (config?.value) {
+      return config.value;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch API key from database, using env fallback:', error);
+  }
+  
+  // Fallback to environment variable
+  return process.env.LIVEAVATAR_API_KEY || '';
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,13 +31,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const apiKey = await getLiveAvatarApiKey();
+
     // Call LiveAvatar keep-alive endpoint
     const response = await axios.post(
       'https://api.liveavatar.com/v1/sessions/keep-alive',
       { session_id: sessionId },
       {
         headers: {
-          'x-api-key': LIVEAVATAR_API_KEY,
+          'x-api-key': apiKey,
           'Content-Type': 'application/json',
         },
       }

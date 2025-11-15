@@ -1,10 +1,26 @@
 import axios from 'axios';
+import dbConnect from '@/lib/mongodb';
+import { AppConfig } from '@/models/AppConfig';
 
-const LIVEAVATAR_API_KEY = process.env.LIVEAVATAR_API_KEY;
 const LIVEAVATAR_API_URL = 'https://api.liveavatar.com/v1';
 
-if (!LIVEAVATAR_API_KEY) {
-  console.warn('LIVEAVATAR_API_KEY is not set in environment variables');
+/**
+ * Fetch LiveAvatar API key from database, fallback to env variable
+ */
+async function getLiveAvatarApiKey(): Promise<string> {
+  try {
+    await dbConnect();
+    const config = await AppConfig.findOne({ key: 'LIVEAVATAR_API_KEY' });
+    
+    if (config?.value) {
+      return config.value;
+    }
+  } catch (error) {
+    console.warn('Failed to fetch API key from database, using env fallback:', error);
+  }
+  
+  // Fallback to environment variable
+  return process.env.LIVEAVATAR_API_KEY || '';
 }
 
 export interface LiveAvatarConfig {
@@ -26,12 +42,14 @@ export interface StreamingSessionData {
 }
 
 class LiveAvatarService {
-  private apiKey: string;
   private baseUrl: string;
 
   constructor() {
-    this.apiKey = LIVEAVATAR_API_KEY || '';
     this.baseUrl = LIVEAVATAR_API_URL;
+  }
+
+  private async getApiKey(): Promise<string> {
+    return await getLiveAvatarApiKey();
   }
 
   /**
@@ -39,6 +57,7 @@ class LiveAvatarService {
    */
   async createContext(config: ContextConfig): Promise<string> {
     try {
+      const apiKey = await this.getApiKey();
       const response = await axios.post(
         `${this.baseUrl}/contexts`,
         {
@@ -49,7 +68,7 @@ class LiveAvatarService {
         },
         {
           headers: {
-            'x-api-key': this.apiKey,
+            'x-api-key': apiKey,
             'Content-Type': 'application/json',
           },
         }
@@ -67,6 +86,7 @@ class LiveAvatarService {
    */
   async createStreamingSession(config?: LiveAvatarConfig): Promise<StreamingSessionData> {
     try {
+      const apiKey = await this.getApiKey();
       const response = await axios.post(
         `${this.baseUrl}/sessions/token`,
         {
@@ -77,7 +97,7 @@ class LiveAvatarService {
         },
         {
           headers: {
-            'x-api-key': this.apiKey,
+            'x-api-key': apiKey,
             'Content-Type': 'application/json',
           },
         }
@@ -95,6 +115,7 @@ class LiveAvatarService {
    */
   async sendTextToSpeak(sessionId: string, text: string): Promise<void> {
     try {
+      const apiKey = await this.getApiKey();
       await axios.post(
         `${this.baseUrl}/streaming/speak`,
         {
@@ -103,7 +124,7 @@ class LiveAvatarService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
           },
         }
@@ -119,6 +140,7 @@ class LiveAvatarService {
    */
   async closeSession(sessionId: string): Promise<void> {
     try {
+      const apiKey = await this.getApiKey();
       await axios.post(
         `${this.baseUrl}/streaming/close`,
         {
@@ -126,7 +148,7 @@ class LiveAvatarService {
         },
         {
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
           },
         }
@@ -142,9 +164,10 @@ class LiveAvatarService {
    */
   async listAvatars(): Promise<any[]> {
     try {
+      const apiKey = await this.getApiKey();
       const response = await axios.get(`${this.baseUrl}/avatars`, {
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
         },
       });
 
