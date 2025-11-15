@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Button, Spinner, Textarea } from '@nextui-org/react';
@@ -35,7 +35,7 @@ interface Message {
   type: 'voice' | 'text';
 }
 
-export default function SessionPage() {
+function SessionContent() {
   const { user } = useUser();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -501,5 +501,17 @@ export default function SessionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SessionPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner size="lg" />
+      </div>
+    }>
+      <SessionContent />
+    </Suspense>
   );
 }
