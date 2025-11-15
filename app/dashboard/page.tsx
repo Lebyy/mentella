@@ -191,7 +191,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Persona Card */}
-        {profile?.currentPersona && (
+        {profile?.currentPersona ? (
           <Card className="mb-8 overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
               <div className="flex justify-between items-center w-full">
@@ -232,6 +232,32 @@ export default function DashboardPage() {
                   </details>
                 </div>
               )}
+            </CardBody>
+          </Card>
+        ) : (
+          <Card className="mb-8 overflow-hidden">
+            <CardBody className="p-12 text-center">
+              <div className="flex flex-col items-center justify-center">
+                <img 
+                  src="https://api.iconify.design/noto:crystal-ball.svg" 
+                  alt="No Persona" 
+                  className="w-32 h-32 mb-6"
+                />
+                <h3 className="text-2xl font-bold text-gray-700 mb-3">
+                  No Health Persona Yet
+                </h3>
+                <p className="text-gray-600 max-w-md mb-6">
+                  Complete an assessment session to generate your personalized AI health persona with insights and recommendations.
+                </p>
+                <Button
+                  size="lg"
+                  color="primary"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600"
+                  onClick={() => router.push('/session?type=therapy')}
+                >
+                  Start Your First Session
+                </Button>
+              </div>
             </CardBody>
           </Card>
         )}
@@ -332,59 +358,33 @@ export default function DashboardPage() {
           </Card>
         )}
 
-        {/* Assessment Types - Show only if no assessments completed */}
-        {(!profile?.assessments || profile.assessments.length === 0) && (
-          <Card className="mb-8">
-            <CardHeader>
-              <h2 className="text-2xl font-bold text-gray-800">Available Assessments</h2>
-            </CardHeader>
-            <CardBody className="p-6">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-                {ASSESSMENT_TYPES.map((assessment) => {
-                  const Icon = assessment.icon;
-                  return (
-                    <div
-                      key={assessment.id}
-                      onClick={() => handleStartAssessment(assessment.id)}
-                      className="border border-gray-200 hover:border-gray-400 transition-all cursor-pointer rounded-lg p-4 bg-white"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10">
-                          <Icon className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <Chip size="sm" variant="flat" className="text-xs">
-                          {assessment.duration}
-                        </Chip>
-                      </div>
-                      
-                      <h3 className="text-base font-semibold text-gray-800 mb-1">
-                        {assessment.title}
-                      </h3>
-                      <p className="text-gray-600 text-xs">
-                        {assessment.description}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardBody>
-          </Card>
-        )}
-
         {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <h2 className="text-2xl font-bold text-gray-800">Quick Actions</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Start a Session</h2>
           </CardHeader>
           <CardBody className="p-6">
-            <Button
-              size="lg"
-              color="primary"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 w-full"
-              onClick={() => router.push('/session?type=therapy')}
-            >
-              Start New Session
-            </Button>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ASSESSMENT_TYPES.map((assessment) => {
+                const Icon = assessment.icon;
+                return (
+                  <Button
+                    key={assessment.id}
+                    size="lg"
+                    color={assessment.color}
+                    variant="flat"
+                    className="h-auto py-4 flex-col items-start text-left"
+                    onClick={() => handleStartAssessment(assessment.id)}
+                  >
+                    <div className="flex items-center gap-2 mb-2 w-full">
+                      <Icon className="w-5 h-5" />
+                      <span className="font-semibold text-sm">{assessment.title}</span>
+                    </div>
+                    <span className="text-xs opacity-80">{assessment.duration}</span>
+                  </Button>
+                );
+              })}
+            </div>
           </CardBody>
         </Card>
 
